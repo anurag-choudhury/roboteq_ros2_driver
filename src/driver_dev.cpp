@@ -1,21 +1,17 @@
 #include "roboteq_ros2_driver/roboteq_ros2_driver.hpp"
 
-// Include important C++ header files that provide class
-// templates for useful operations.
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
 
-// ROS Client Library for C++
-// Allows use of the most common elements of ROS 2
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/clock.hpp"
 #include <iostream>
 
 #include "std_msgs/msg/string.hpp"
 
-// dependencies for ROS
+
 #include <serial/serial.h>
 #include <signal.h>
 #include <string>
@@ -40,20 +36,10 @@
 
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2/LinearMath/Quaternion.h>
-
-// #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2/Math/Quaternion.h>
 
 serial::Serial controller;
-/*
-//probably don't need custom interuption handler
-void mySigintHandler(int sig)
-{
-    //RCLCPP_INFO(rclcpp::get_logger(),"Received SIGINT signal, shutting down..."); //todo
-    // ROS_INFO("Received SIGINT signal, shutting down...");
-    rclcpp::shutdown();
-}
-*/
+
 uint32_t millis()
 {
     auto now = std::chrono::system_clock::now();
@@ -64,7 +50,6 @@ uint32_t millis()
 namespace Roboteq
 {
     Roboteq::Roboteq() : Node("roboteq_ros2_driver")
-    // initialize parameters and variables
     {
         pub_odom_tf = this->declare_parameter("pub_odom_tf", false);
         odom_frame = this->declare_parameter("odom_frame", "odom");
@@ -98,7 +83,6 @@ namespace Roboteq
         odom_last_yaw = 0.0;
         odom_last_time = 0;
 
-        // odom_msg = std::make_shared<nav_msgs::msg::Odometry>();
         odom_msg = nav_msgs::msg::Odometry();
 
         serial::Timeout timeout = serial::Timeout::simpleTimeout(1000);
@@ -117,7 +101,6 @@ namespace Roboteq
         //
         // cmd_vel subscriber
         //
-
         cmdvel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
             cmdvel_topic, // topic name
             1,            // QoS history depth
@@ -129,11 +112,8 @@ namespace Roboteq
             std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         // enable modifying params at run-time
-
         param_update_timer =
             this->create_wall_timer(1000ms, std::bind(&Roboteq::update_parameters, this));
-
-        // run();
     }
 
     void Roboteq::update_parameters()
@@ -177,8 +157,8 @@ namespace Roboteq
         sleep(5);
     }
 
-    void Roboteq::cmdvel_callback(const geometry_msgs::msg::Twist::SharedPtr twist_msg) // const???
-    {                                                                                   // otal_encoder_pulses
+    void Roboteq::cmdvel_callback(const geometry_msgs::msg::Twist::SharedPtr twist_msg)
+    {                                                                                  
         // wheel speed (m/s)
         float right_speed = twist_msg->linear.x + track_width * twist_msg->angular.z / 2.0;
         float left_speed = twist_msg->linear.x - track_width * twist_msg->angular.z / 2.0;
@@ -188,9 +168,7 @@ namespace Roboteq
 
         // motor speed (rpm)
         int32_t right_rpm = right_speed * gear_ratio / wheel_circumference * 60.0;
-        // std::cout<<"Speed "<<right_speed<<"RPM "<<right_rpm<<std::endl;
         int32_t left_rpm = left_speed * gear_ratio / wheel_circumference * 60.0;
-        // std::cout<<"Sending Command Velocity"<<right_rpm<<std::endl;
         right_cmd << "!S 1 " << right_rpm << "\r";
         left_cmd << "!S 2 " << left_rpm << "\r";
 
@@ -212,7 +190,9 @@ namespace Roboteq
         controller.write("!S 2 0\r");
         controller.flush();
 
-        // disable echo
+        //disable echo
+        controller.write("^ECHOF 1\r");
+        controller.flush();
 
         // enable watchdog timer (1000 ms)
         controller.write("^RWD 1000\r");
@@ -251,8 +231,6 @@ namespace Roboteq
         odom_baselink_transform_ =
             std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
-        // ROS_INFO_STREAM("Publishing to topic " << odom_topic);
-        // maybe use this-> instead of
         // RCLCPP_INFO_STREAM(get_logger(), "Publishing to topic " << odom_topic);
 
         // odom_pub = nh.advertise<nav_msgs::Odometry>(odom_topic, 1000);
@@ -326,7 +304,6 @@ namespace Roboteq
     }
 
     // Odom msg streams
-
     void Roboteq::odom_stream()
     {
 
@@ -459,8 +436,8 @@ namespace Roboteq
         odom_msg.pose.pose.position.z = 0.0;
         odom_msg.pose.pose.orientation = quat;
         odom_msg.twist.twist.linear.x = linear;
-        odom_msg.twist.twist.linear.y = 0.0;
-        odom_msg.twist.twist.linear.z = 0.0;
+        odom_msg.twist.twist..y = 0.0;
+        odom_msg.twist.twist..z = 0.0;
         odom_msg.twist.twist.angular.x = 0.0;
         odom_msg.twist.twist.angular.y = 0.0;
         odom_msg.twist.twist.angular.z = angular;
