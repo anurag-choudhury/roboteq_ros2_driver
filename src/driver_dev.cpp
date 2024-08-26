@@ -43,18 +43,8 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 
-//#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 serial::Serial controller;
-/*
-//probably don't need custom interuption handler
-void mySigintHandler(int sig)
-{
-    //RCLCPP_INFO(rclcpp::get_logger(),"Received SIGINT signal, shutting down..."); //todo
-    // ROS_INFO("Received SIGINT signal, shutting down...");
-    rclcpp::shutdown();
-}
-*/
 uint32_t millis()
 {
     auto now = std::chrono::system_clock::now();
@@ -131,7 +121,6 @@ Roboteq::Roboteq() : Node("roboteq_ros2_driver")
     param_update_timer =
       this->create_wall_timer(1000ms, std::bind(&Roboteq::update_params, this));
     */
-    //run();
 }
 
 void Roboteq::update_parameters()
@@ -332,41 +321,17 @@ void Roboteq::odom_setup()
     if (pub_odom_tf)
     {
         //TODO: implement tf2 broadcaster
-        // RCLCPP_INFO(this->get_logger(), "Broadcasting odom tf"); // might use this-> instead of node
-        //    odom_broadcaster.init(nh);	// ???
         
     }
 
-    // ROS_INFO_STREAM("Publishing to topic " << odom_topic);
     // maybe use this-> instead of
-    // RCLCPP_INFO_STREAM(get_logger(), "Publishing to topic " << odom_topic);
-
-    // odom_pub = nh.advertise<nav_msgs::Odometry>(odom_topic, 1000);
-    // odom_pub = this->create_publisher<nav_msgs::msg::Odometry>(odom_topic, 1000)
-
-    // Set up the header
-    /*
-    tf_msg.header.stamp = 0;
-    tf_msg.header.frame_id = odom_frame;
-    tf_msg.child_frame_id = base_frame;
-    */
 
 
     odom_msg.header.stamp = this->get_clock()->now();
     
     odom_msg.header.frame_id = odom_frame;
     odom_msg.child_frame_id = base_frame;
-    /*
-        auto message = nav_msgs::msg::Odometry();
-    message.header.stamp = this->get_clock()->now();
-    message.header.frame_id = "odom";
-    message.pose.pose.position.x = new_state.x;
-    message.pose.pose.position.y = new_state.y;
-    message.pose.pose.orientation.x = quat.x();
-    message.pose.pose.orientation.y = quat.y();
-    message.pose.pose.orientation.z = quat.z();
-    message.pose.pose.orientation.w = quat.w();
-    */
+
     // Set up the pose covariance
     for (size_t i = 0; i < 36; i++)
     {
@@ -524,22 +489,6 @@ void Roboteq::odom_publish()
 
     //tf2::Quaternion quat = tf2::createQuaternionMsgFromYaw(odom_yaw);
     // TODO: set up tf2_ros
-    /*
-    geometry_msgs::msg::Quaternion quat = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), odom_yaw));
-    if ( pub_odom_tf )
-    {
-        tf_msg.header.seq++;
-        tf_msg.header.stamp = rclcpp::Clock::now();
-        tf_msg.header.frame_id = odom_frame;
-        tf_msg.child_frame_id = base_frame;
-
-        tf_msg.transform.translation.x = odom_x;
-        tf_msg.transform.translation.y = odom_y;
-        tf_msg.transform.translation.z = 0.0;
-        tf_msg.transform.rotation = quat;
-        odom_broadcaster.sendTransform(tf_msg);
-    }
-    */
     //update odom msg
 
     //odom_msg->header.seq++; //? not used in ros2 ?
@@ -561,30 +510,14 @@ void Roboteq::odom_publish()
 int Roboteq::run()
 {
 
-
-    
-    // TODO: support automatic re-opening of port after disconnection
-
-
     starttime = millis();
     hstimer = starttime;
     mstimer = starttime;
     lstimer = starttime;
-
-
-
-
-
-
         
      cmdvel_loop();
      odom_loop();
      cmdvel_run();
-
-        
-        
-
-
     return 0;
 }
 
@@ -610,9 +543,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<Roboteq::Roboteq>();
     exec.add_node(node);
     exec.spin();
-    printf("stop");
     rclcpp::shutdown();
-    //signal(SIGINT, mySigintHandler); // rclcpp::shutdown();
     return 0;
 
    
